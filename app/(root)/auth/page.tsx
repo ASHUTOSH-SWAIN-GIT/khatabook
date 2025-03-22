@@ -1,145 +1,193 @@
-"use client"; // Marks this as a Client Component
-
-import React from "react";
-import { useRouter } from 'next/navigation' // Adjust path to your router config
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+"use client";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { auth, googleProvider } from "@/lib/firebase"; // Adjust path to your firebase config
-import { signInWithPopup } from "firebase/auth";
+import { IconBrandGoogle } from "@tabler/icons-react";
+import { GoogleAuthProvider,signInWithPopup } from "firebase/auth";
+import { FirebaseError } from "firebase/app";
 
-const Signup = () => {
+const BottomGradient = () => (
+  <>
+    <span className="absolute inset-x-0 -bottom-px block h-px w-full bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-0 transition duration-500 group-hover/btn:opacity-100" />
+    <span className="absolute inset-x-10 -bottom-px mx-auto block h-px w-1/2 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-0 blur-sm transition duration-500 group-hover/btn:opacity-100" />
+  </>
+);
+
+const LabelInputContainer = ({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => (
+  <div className={cn("flex w-full flex-col space-y-2", className as string)}>
+    {children}
+  </div>
+);
+
+export default function SignupFormDemo() {
+    
   const router = useRouter();
-  // Handle Google Sign-In
-  const handleGoogleSignIn = async () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [firstname, setFirstname] = useState("");
+  const [lastname, setLastname] = useState("");
+  const [error, setError] = useState("");
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    function isValidEmail(email: string) {
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@(gmail|yahoo)\.com$/;
+      return emailRegex.test(email);
+    }
+
+
+    if (!isValidEmail(email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
-      console.log("Signed in with Google:", user);
-      // Redirect or handle the signed-in user here (e.g., router.push("/dashboard"))
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      console.log("User signed up:", userCredential.user);
       router.push("/dashboard");
-    } catch (error) {
-      console.error("Google Sign-In Error:", error);
-      // Optionally show an error message to the user
+    } catch (err: any) {
+      setError(err.message);
     }
   };
 
+  const handleGoogleSignup = async () => {
+    const provider = new GoogleAuthProvider();
+    
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      
+      console.log("User signed in:", user);
+      router.push("/Home");
+      
+    } catch (error: any) {
+      if (error instanceof FirebaseError) {
+        if (error.code === "auth/account-exists-with-different-credential") {
+          setError("An account already exists with the same email but a different sign-in provider.");
+        } else {
+          setError(error.message);
+        }
+      } else {
+        setError("Error during sign-in. Please try again.");
+      }
+      console.error("Error during sign-in:", error);
+    }
+
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md border border-gray-200">
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold text-gray-900">Sign Up</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Create an account to get started.
-          </p>
-        </div>
+    <div className="shadow-input mx-auto w-full max-w-md rounded-none bg-white p-4 md:rounded-2xl md:p-8 dark:bg-black">
+      <h1 className="text-2xl font-semibold text-black dark:text-white flex items-center space-x-2 justify-center">
+        Welcome to Khatabook
+      </h1>
 
-        {/* Form */}
-        <form className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="username" className="text-gray-700 font-medium">
-              Username
-            </Label>
+      {error && (
+        <div className="flex items-center space-x-2 bg-white border-l-4 border-red-500 text-black p-3 text-sm rounded-md mt-4 shadow-md">
+          <span className="text-lg">⚠</span>
+          <p>{error}</p>
+        </div>
+      )}
+
+
+
+      <form className="my-8" onSubmit={handleSignup}>
+        <div className="mb-4 flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2">
+          <LabelInputContainer>
+            <Label htmlFor="firstname">First name</Label>
             <Input
-              id="username"
+              id="firstname"
               type="text"
-              placeholder="johndoe"
-              className="w-full border-gray-300 focus:border-gray-500 focus:ring-gray-500 transition-all duration-200"
+              value={firstname}
+              onChange={(e) => setFirstname(e.target.value)}
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-gray-700 font-medium">
-              Email
-            </Label>
+          </LabelInputContainer>
+          <LabelInputContainer>
+            <Label htmlFor="lastname">Last name</Label>
             <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              className="w-full border-gray-300 focus:border-gray-500 focus:ring-gray-500 transition-all duration-200"
+              id="lastname"
+              type="text"
+              value={lastname}
+              onChange={(e) => setLastname(e.target.value)}
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-gray-700 font-medium">
-              Password
-            </Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              className="w-full border-gray-300 focus:border-gray-500 focus:ring-gray-500 transition-all duration-200"
-            />
-          </div>
-
-          <Button
-            type="submit"
-            className={cn(
-              "w-full bg-gray-900 hover:bg-gray-800 text-white font-medium py-2 rounded-md transition-all duration-300"
-            )}
-          >
-            Sign Up
-          </Button>
-        </form>
-
-        {/* Divider */}
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-gray-300" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">
-              Or continue with
-            </span>
-          </div>
+          </LabelInputContainer>
         </div>
 
-        {/* Google Sign-In Button */}
-        <Button
-          variant="outline"
-          className={cn(
-            "w-full border-gray-400 bg-gray-50 text-gray-900 font-medium py-2.5 px-4 rounded-md transition-all duration-300 flex items-center justify-center gap-3"
-          )}
-          onClick={handleGoogleSignIn}
+        <LabelInputContainer className="mb-4">
+          <Label htmlFor="email">Email Address</Label>
+          <Input
+            id="email"
+            placeholder="Enter your email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </LabelInputContainer>
+
+        <LabelInputContainer className="mb-4">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            placeholder="Enter your password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </LabelInputContainer>
+
+        <LabelInputContainer className="mb-8">
+          <Label htmlFor="confirmPassword">Confirm Password</Label>
+          <Input
+            id="confirmPassword"
+            placeholder="Confirm your password"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+          />
+        </LabelInputContainer>
+
+        <button
+          className="group/btn relative block h-10 w-full rounded-md bg-gradient-to-br from-black to-neutral-600 font-medium text-white shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset] dark:bg-zinc-800 dark:from-zinc-900 dark:to-zinc-900 dark:shadow-[0px_1px_0px_0px_#27272a_inset,0px_-1px_0px_0px_#27272a_inset]"
+          type="submit"
         >
-          <svg
-            className="w-5 h-5"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M12.24 10.32v3.25h4.74c-.19 1.03-.73 1.9-1.59 2.53-.86.63-1.91 1-3.15 1-2.67 0-4.91-2.24-4.91-5s2.24-5 4.91-5c1.21 0 2.31.47 3.15 1.24l2.29-2.29C16.47 4.47 14.47 3 12.24 3c-4.42 0-8 3.58-8 8s3.58 8 8 8c4.61 0 7.67-3.24 7.67-7.78 0-.52-.05-1.03-.14-1.52h-7.53z"
-              fill="#000000"
-            />
-            <path
-              d="M4.24 12c0-1.1.29-2.13.79-3.03l-2.29-2.29C1.47 8.47 1 10.24 1 12s.47 3.53 1.24 5.32l2.29-2.29c-.5-.9-.79-1.93-.79-3.03z"
-              fill="#333333"
-            />
-            <path
-              d="M12.24 19c2.23 0 4.23-.76 5.79-2.03l-2.29-2.29c-.84.77-1.94 1.24-3.15 1.24-1.24 0-2.29-.37-3.15-1-.86-.63-1.4-1.5-1.59-2.53H3.5v3.25C5.47 17.76 8.71 19 12.24 19z"
-              fill="#666666"
-            />
-            <path
-              d="M7.5 13.75c.19-1.03.73-1.9 1.59-2.53.86-.63 1.91-1 3.15-1v-3.25c-2.23 0-4.23.76-5.79 2.03l2.29 2.29c-.84-.77-1.24-1.24-1.24-1.24z"
-              fill="#999999"
-            />
-          </svg>
-          Sign in with Google
-        </Button>
+          Sign up &rarr;
+          <BottomGradient />
+        </button>
 
-        {/* Footer */}
-        <div className="text-center text-sm text-gray-600">
-          Already have an account?{" "}
-          <a href="/login" className="text-gray-900 hover:underline">
-            Log in
-          </a>
+        <div className="my-8 h-[1px] w-full bg-gradient-to-r from-transparent via-neutral-300 to-transparent dark:via-neutral-700" />
+
+        <div className="flex flex-col space-y-4">
+          <button
+            className="group/btn shadow-input relative flex h-10 w-full items-center justify-start space-x-2 rounded-md bg-gray-50 px-4 font-medium text-black dark:bg-zinc-900 dark:shadow-[0px_0px_1px_1px_#262626]"
+            type="button"
+            onClick={handleGoogleSignup}
+          >
+            <IconBrandGoogle className="h-4 w-4 text-neutral-800 dark:text-neutral-300" />
+            <span className="text-sm text-neutral-700 dark:text-neutral-300">
+              Google
+            </span>
+            <BottomGradient />
+          </button>
         </div>
-      </div>
+      </form>
     </div>
   );
-};
-
-export default Signup;
+} 
