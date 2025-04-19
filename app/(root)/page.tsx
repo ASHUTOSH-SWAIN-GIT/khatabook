@@ -14,7 +14,9 @@ import {
 } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import { Book,UserPlus } from "lucide-react"; 
-
+// import { InteractiveHoverButton } from "@/components/magicui/interactive-hover-button";
+import { RainbowButton } from "@/components/magicui/rainbow-button";
+import { Button } from "@/components/ui/button";
 export default function Home() {
   const router = useRouter();
 
@@ -54,10 +56,13 @@ export default function Home() {
 
       {/* Foreground Content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen pb-20">
-        <h1 className="text-4xl font-bold text-white">Welcome to My App</h1>
-        <p className="mt-4 text-lg text-gray-200">
-          This is the home page with a grid pattern background.
-        </p>
+      <h1 className="text-4xl font-bold">
+        Welcome to My App
+      </h1>
+      <Button className="bg-white rounded-lg ">get started</Button>
+      
+      
+        
       </div>
     </div>
   );
